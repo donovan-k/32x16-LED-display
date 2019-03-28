@@ -52,7 +52,7 @@ void setup() {
   matrix.setCursor(11, 1);  // start at top left, with one pixel of spacing
   matrix.setTextSize(1);   // size 1 == 8 pixels high
 
-  // print each letter with a rainbow color
+  // print DK Inn.
  
   matrix.setTextColor(matrix.Color444(0,12,9));
   matrix.print('D');
@@ -79,6 +79,7 @@ long randshape;
 long randx; 
 long randy;
 long randsize;
+  //random colors
 long randr;
 long randg;
 long randb;
@@ -90,15 +91,14 @@ long randNumber6;
 long randNumber7;
 long randNumber8;
 long randNumber9;
-  //randum number for height of spectrum analyzer
-long randNumberh;
+
 
 
 void loop() {
 
 
   // read the pushbutton input pin:
-  // cycling through rainbow colors animation
+
   buttonState = digitalRead(buttonPin);
 
   // compare the buttonState to its previous state
@@ -124,7 +124,7 @@ void loop() {
   // turns on the LED every four button pushes by checking the modulo of the
   // button push counter. the modulo function gives you the remainder of the
   // division of two numbers:
-
+  // pulsating colors animation
   if (buttonPushCounter == 1) {
     buttonPushCounter1 = 0;
     buttonPushCounter2 = 0;
@@ -320,7 +320,7 @@ int b1 = randNumber9;
     // Delay a little bit to avoid bouncing
     delay(50);
   }
-//fire dancing animation
+//random everything animation
 
    lastButtonState2 = buttonState2;
   if (buttonPushCounter2 == 1) {
