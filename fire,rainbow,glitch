@@ -53,7 +53,7 @@ void setup() {
   matrix.setCursor(11, 1);  // start at top left, with one pixel of spacing
   matrix.setTextSize(1);   // size 1 == 8 pixels high
 
-  // print each letter with a rainbow color
+  // print DK Inn.
  
   matrix.setTextColor(matrix.Color444(0,12,9));
   matrix.print('D');
