@@ -209,36 +209,34 @@ if (c==2){
     // Delay a little bit to avoid bouncing
     delay(50);
   }
-//fire dancing animation
+//color changing
 
    lastButtonState2 = buttonState2;
   if (buttonPushCounter2 == 1) {
     buttonPushCounter1 = 0;
     buttonPushCounter = 0;
-//red,orange,yellow,green
-    randc = random(4);
-    
-    randx = random(32);
-    
-    randy = random(16);
-    
-    int c = randc;
-    int x = randx;
-    int y = randy;
-
-    
-if (c==0){
-    matrix.drawPixel(x,y,matrix.Color444(0,15,0));
-}
-if (c==1){
-    matrix.drawPixel(x,y,matrix.Color444(15,15,0));
-}
-if (c==2){
-    matrix.drawPixel(x,y,matrix.Color444(15,0,0));
-}
-if (c==3){
-    matrix.drawPixel(x,y,matrix.Color444(15,3,0));
-}
-    
-}
+//color changing slowly
+  for (int x=15; x>0; x--){
+    matrix.fillScreen(matrix.Color444(15, x, x)); 
+    delay(100);
+   }
+  for (int x=0; x<15; x++){ //white to red
+    matrix.fillScreen(matrix.Color444(15, 0, x));
+    delay(100); 
+  }
+  for (int x=15; x>0; x--){ //red to blue
+    matrix.fillScreen(matrix.Color444(x, 0, 15)); 
+    delay(100);
+  }  
+  int y = 15;
+  for (int x=0; x<15; x++){ //to green
+    matrix.fillScreen(matrix.Color444(0, x, y)); 
+    y--;
+    delay(100);
+  }  
+  for (int x=0; x<15; x++){ //back to white
+    matrix.fillScreen(matrix.Color444(x, 15, x));
+    delay(100);
+  }
+}    
 }
