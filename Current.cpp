@@ -53,9 +53,11 @@ class Array {
   };
 
   Node* head_;
+  int size_;
 
   Array() {
     head_ = NULL;
+    size_ = 0;
   }
 
   ~Array() {
@@ -91,6 +93,7 @@ class Array {
       head_->next_ = NULL;
       head_->data_ = p;
     }
+    size_++;
   }
 
   Point pop_front() {
@@ -108,6 +111,8 @@ class Array {
       delete head_;
       head_ = NULL;
     }
+
+    size_--;
 
     return p;
   }
@@ -128,18 +133,90 @@ class Display {
     //std::vector<std::string> text = {'D'}
   }
 
-  // slowly changes color
-  bool ColorChange(int del) {
+  // slowly changes color by spiralling into next color
+  bool ColorChange(int del, bool is_reverse) {
     buttonState1 = digitalRead(buttonPin1);
     Serial.println(buttonState1);
 
     // slowely go through all the hues
-    for (int i = 0; i < 1535; i++) {
-      matrix.fillScreen(matrix.ColorHSV(i, 255, 255, false));
+    for (int i = 100; i < 1535; i+=100) {
+      Spiral(i-100, 50, is_reverse);
       if ( digitalRead(buttonPin1) == HIGH) {return false;}
+      is_reverse = !is_reverse;
     }
 
     return true;
+  }
+  
+  // helper function to spiral through a matrix
+  void Spiral(int hue, int del, bool reverse) {
+    int r = 0, c = 0;
+    int nr = 16, nc = 31;
+    Array order;
+    while (1) {
+      uint16_t color = matrix.ColorHSV(hue, 255, 255, false);
+      if (c > nc) {break;}
+    
+      // remove/print top row
+      order.push_front(Array::Point(c,r)); // from point in line
+      order.push_front(Array::Point(nc,r)); // to point in line
+      if (!reverse) {
+        ReverseHandle(order, hue, del);
+      }
+      r++;
+      if (r > nr) {break;}
+    
+      // remove/print right column
+      order.push_front(Array::Point(nc,r)); // from point in line
+      order.push_front(Array::Point(nc,nr)); // to point in line
+      if (!reverse) {
+        ReverseHandle(order, hue, del);
+      }
+      nc--;
+      if (c > nc) {break;}
+
+      // remove/print bottom row
+      order.push_front(Array::Point(nc,nr)); // from point in line
+      order.push_front(Array::Point(c,nr)); // to point in line
+      if (!reverse) {
+        ReverseHandle(order, hue, del);
+      }
+      nr--;
+      if (r > nr) {break;}
+
+      // remove/print left column
+      order.push_front(Array::Point(c,nr)); // from point in line
+      order.push_front(Array::Point(c,r)); // to point in line
+      if (!reverse) {
+        ReverseHandle(order, hue, del);
+      }
+      delay(del);
+      c++;
+
+      // increment hue
+      hue += 100/8;
+    }
+
+    // if reverse spiral other direction
+    if (reverse) {
+      ReverseHandle(order, hue, del);
+    }
+  }
+
+  void ReverseHandle(Array& order, int hue, int del) {
+    uint16_t color = matrix.ColorHSV(hue, 255, 255, false);
+    int c = 1;
+    while (order.size_ > 0) {
+      if (c % 4 == 0) {
+        hue -= 100/8;
+      }
+      color = matrix.ColorHSV(hue, 255, 255, false);
+      Array::Point from = order.pop_front();
+      Array::Point to = order.pop_front();
+      matrix.drawLine(from.x, from.y, to.x, to.y ,color);
+      delay(del);
+      c++;
+    }
   }
 
   // Uses DfS Traversal and other math functions to apply a cool animation
@@ -178,6 +255,7 @@ class Display {
 
 
 extern Display dis;
+bool color_reverse = false;
 
 // setup function
 void setup() {
@@ -206,9 +284,10 @@ void setup() {
 void loop() {
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
-    bool keepGo = dis.ColorChange(100);
+    bool keepGo = dis.ColorChange(100, color_reverse);
     while (keepGo) {
-      keepGo = dis.ColorChange(100);
+      color_reverse = !color_reverse;
+      keepGo = dis.ColorChange(100, color_reverse);
     }
     dis.IntroScreen();
   }
