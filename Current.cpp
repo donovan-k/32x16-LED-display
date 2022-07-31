@@ -5,7 +5,7 @@
 #include <RGBmatrixPanel.h> // Hardware-specific library
 //#include <IRremote.h>
 
-
+// variables for interface to the led matrix hardware
 #define CLK 11 // USE THIS ON ARDUINO MEGA
 #define OE   9
 #define LAT 10
@@ -16,23 +16,17 @@ RGBmatrixPanel matrix(A, B, C, CLK, LAT, OE, false);
 
 const int  buttonPin = 2;    // the pin that the pushbutton is attached to
 const int  buttonPin1 = 3; 
-const int  buttonPin2 = 4;
 
 // Variables will change:
-int buttonPushCounter = 0;   // counter for the number of button presses
-int buttonState = 0;         // current state of the button
-int lastButtonState = 0;     // previous state of the button
-int buttonPushCounter1 = 0;   // counter for the number of button presses
-int buttonState1 = 0;         // current state of the button
-int lastButtonState1 = 0;     // previous state of the button
-int buttonPushCounter2 = 0;
-int buttonState2 = 0;
-int lastButtonState2 = 0;
+int buttonState = 0;         // current state of the button1
+int buttonState1 = 0;         // current state of the button2
 
 
 // Array Class
+// Acts as a stack structure and holds Points as elements
 class Array {
  public: 
+  // Point struct to declare a coordinate point
   struct Point {
     Point() {
       
@@ -44,6 +38,8 @@ class Array {
     int x;
     int y;
   };
+
+  // data struct to hold each element
   struct Node {
     Node() {
       
@@ -52,20 +48,24 @@ class Array {
     Point data_;
   };
 
+  // member variables
   Node* head_;
   int size_;
 
+  // constructor
   Array() {
     head_ = NULL;
     size_ = 0;
   }
 
+  // destructor
   ~Array() {
     while (pop_front().x != -1) {
       continue;
     }
   }
 
+  // copy constructor
   Array(const Array& other) {
     Node* node = other.head_;
     while (node) {
@@ -74,6 +74,7 @@ class Array {
     }
   }
 
+  // copy assignment operator
   Array& operator=(const Array& other) {
     Node* node = other.head_;
     while (node) {
@@ -82,6 +83,7 @@ class Array {
     }
   }
 
+  // adds a new element to the front of the array
   void push_front(Point p) {
     if (head_) {
       Node* node = new Node;
@@ -96,6 +98,7 @@ class Array {
     size_++;
   }
 
+  // removes the first element of the array and returns it
   Point pop_front() {
     if (head_ == NULL) {
       return Point(-1, -1);
@@ -133,23 +136,22 @@ class Display {
     //std::vector<std::string> text = {'D'}
   }
 
-  // slowly changes color by spiralling into next color
+  // slowly changes color
   bool ColorChange(int del, bool is_reverse) {
     buttonState1 = digitalRead(buttonPin1);
     Serial.println(buttonState1);
 
     // slowely go through all the hues
     for (int i = 100; i < 1535; i+=100) {
-      Spiral(i-100, 50, is_reverse);
-      if ( digitalRead(buttonPin1) == HIGH) {return false;}
+      if (!Spiral(i-100, 50, is_reverse)) {return false;}
       is_reverse = !is_reverse;
     }
 
     return true;
   }
-  
-  // helper function to spiral through a matrix
-  void Spiral(int hue, int del, bool reverse) {
+
+  // helper function to spiral through the led matrix
+  bool Spiral(int hue, int del, bool reverse) {
     int r = 0, c = 0;
     int nr = 16, nc = 31;
     Array order;
@@ -161,7 +163,9 @@ class Display {
       order.push_front(Array::Point(c,r)); // from point in line
       order.push_front(Array::Point(nc,r)); // to point in line
       if (!reverse) {
-        ReverseHandle(order, hue, del);
+        // handles displaying lines in order array
+        // returns false if another button is pressed while running
+        if (!ReverseHandle(order, hue, del)) {return false;}
       }
       r++;
       if (r > nr) {break;}
@@ -170,7 +174,9 @@ class Display {
       order.push_front(Array::Point(nc,r)); // from point in line
       order.push_front(Array::Point(nc,nr)); // to point in line
       if (!reverse) {
-        ReverseHandle(order, hue, del);
+        // handles displaying lines in order array
+        // returns false if another button is pressed while running
+        if (!ReverseHandle(order, hue, del)) {return false;}
       }
       nc--;
       if (c > nc) {break;}
@@ -179,7 +185,9 @@ class Display {
       order.push_front(Array::Point(nc,nr)); // from point in line
       order.push_front(Array::Point(c,nr)); // to point in line
       if (!reverse) {
-        ReverseHandle(order, hue, del);
+        // handles displaying lines in order array
+        // returns false if another button is pressed while running
+        if (!ReverseHandle(order, hue, del)) {return false;}
       }
       nr--;
       if (r > nr) {break;}
@@ -188,7 +196,9 @@ class Display {
       order.push_front(Array::Point(c,nr)); // from point in line
       order.push_front(Array::Point(c,r)); // to point in line
       if (!reverse) {
-        ReverseHandle(order, hue, del);
+        // handles displaying lines in order array
+        // returns false if another button is pressed while running
+        if (!ReverseHandle(order, hue, del)) {return false;}
       }
       delay(del);
       c++;
@@ -201,15 +211,26 @@ class Display {
     if (reverse) {
       ReverseHandle(order, hue, del);
     }
+
+    return true;
   }
 
-  void ReverseHandle(Array& order, int hue, int del) {
+  // helper function to spiral to do pops from order and display lines
+  bool ReverseHandle(Array& order, int hue, int del) {
     uint16_t color = matrix.ColorHSV(hue, 255, 255, false);
     int c = 1;
+
+    // change hue every cycle completed of the spiral
     while (order.size_ > 0) {
+      // checks for other button press
+      if ( digitalRead(buttonPin1) == HIGH) {return false;}
+
+      // changes hue every cycle of spiral
       if (c % 4 == 0) {
         hue -= 100/8;
       }
+
+      // draw a line from 'from' to 'to' on the led matrix
       color = matrix.ColorHSV(hue, 255, 255, false);
       Array::Point from = order.pop_front();
       Array::Point to = order.pop_front();
@@ -217,6 +238,8 @@ class Display {
       delay(del);
       c++;
     }
+
+    return true;
   }
 
   // Uses DfS Traversal and other math functions to apply a cool animation
@@ -267,13 +290,11 @@ void setup() {
 
   pinMode(buttonPin, INPUT);
   pinMode(buttonPin1, INPUT);
-  pinMode(buttonPin2, INPUT);
 
 
   // initialize the LED as an output:
   buttonState = digitalRead(buttonPin);
   buttonState1 = digitalRead(buttonPin1);
-  buttonState2 = digitalRead(buttonPin2);
 
   // Show intro screen on display
   matrix.begin();
@@ -283,16 +304,21 @@ void setup() {
 
 void loop() {
   buttonState = digitalRead(buttonPin);
+  // runs in loop once correct button is pressed, runs till different button is pressed
   if (buttonState == HIGH) {
     bool keepGo = dis.ColorChange(100, color_reverse);
     while (keepGo) {
       color_reverse = !color_reverse;
       keepGo = dis.ColorChange(100, color_reverse);
     }
+
+    // reset color reverse
+    color_reverse = keepGo;
     dis.IntroScreen();
   }
 
   buttonState1 = digitalRead(buttonPin1);
+  // runs in loop once correct button is pressed, runs till different button is pressed
   if (buttonState1 == HIGH) {
     bool keepGo = dis.dfsTraversal(32, 16);
     int counter = 0;
